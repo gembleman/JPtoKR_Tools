@@ -2,8 +2,9 @@ import os
 import binascii
 import re
 
-path_dir = "원본dat"
-save_dir = "추출완료"
+# TODO - .spm이나 .jpg 같은 파일 확장자가 뒤에 붙는 경우, 그건 추출하면 안 된다. 그 기능을 추가해야 함.
+path_dir = "원본파일"
+
 file_list = os.listdir(path_dir)
 
 
@@ -74,15 +75,24 @@ dic3 = [  # 이 값들은 절대 일본어 문자열을 표현하는 데 쓰이�
 def main(ans):
     def search(num):
         init1 = num
+        flag = 0
         while True:
             num += 2
             cola4 = bytes(a1[num : num + 2])
             if cola4 not in dic:
+                black_list = [  # 뒤에 .ogg나 .spm 확장자가 붙을 경우를 감지하기 위해서 씀.
+                    b"\x2e\x73\x70\x6d",
+                    b"\x2e\x6f\x67\x67",
+                ]
+                if (
+                    bytes(a1[num : num + 4]) in black_list
+                ):  # .spm, .ogg 확장자일 경우 기록하지 않음.
+                    flag = 1
                 break
-        jj.write(a1[init1:num].decode("cp932") + "\n")
-        for x in range(
-            init1, num - 1
-        ):  # 왜 num에다 -1을 해야 되나, 문자열 길이에서 하나를 빼줘야 커서 위치와 aaa값이 정확히 맞아떨어짐.
+        if flag == 0:
+            jj.write(a1[init1:num].decode("cp932") + "\n")
+        for x in range(init1, num - 1):
+            # 왜 num에다 -1을 해야 되나, 문자열 길이에서 하나를 빼줘야 커서 위치와 aaa값이 정확히 맞아떨어짐.
             # 예를 들어 1,2,3이런 목록이 있을 때, 문자열 길이가 3이니 세번 건너뛰어야 겠다 하고 next를 세번 쓰면 2, 3, ? 가 빠짐. 1은 이미 빠져있음. for문으로 1을 aaa로 불러왔잖아.
             next(cola1)
 
@@ -105,32 +115,10 @@ def main(ans):
 
         print(len(a1))
 
-        if ans == "2":  # 아스키코드 추출하는 줄
-            file_name = save_dir + "//" + li + "_shift-jis.txt"
-            lll = open(file_name, "w", encoding="cp932")
-            num11 = 0
-            for aaa in cola2:
-                # print(bytes([aaa]))
-                # print(num11)
-                if bytes([aaa]) in dic2:
-                    num_int = num11
-                    while True:
-                        num11 += 1
-                        if bytes([a1[num11]]) not in dic2:
-                            break
-                        next(cola2)
-
-                    cc = a1[num_int:num11].decode("cp932")
-                    if len(cc) > 1:  # \x61 이렇게 1바이트 크기로 추출되는 건 제외.
-                        lll.write(cc + "\n")
-                else:
-                    num11 += 1
-            lll.close()
-            if os.stat(file_name).st_size == 0:  # 빈 텍스트 파일 삭제.
-                print("추출된 아스키코드가 없습니다.")
-                os.remove(file_name)
-
         if ans == "1":  # 일본어 문자열 추출
+            save_dir = "문자열_추출"
+            if not os.path.exists(save_dir):  # 폴더 없으면 만드는 줄
+                os.makedirs(save_dir)
             file_name = save_dir + "//" + li + ".txt"
             jj = open(file_name, "w", encoding="utf-8")
             for aaa in cola1:
@@ -174,7 +162,39 @@ def main(ans):
                 print("추출된 문장이 없습니다.")
                 os.remove(file_name)
 
+        if ans == "2":  # 시스템문자열(아스키코드) 추출하는 줄
+            save_dir = "시스템_문자열_추출"
+            if not os.path.exists(save_dir):  # 폴더 없으면 만드는 줄
+                os.makedirs(save_dir)
+            file_name = save_dir + "//" + li + "_sys.txt"
+            lll = open(file_name, "w", encoding="cp932")
+            num11 = 0
+            for aaa in cola2:
+                # print(bytes([aaa]))
+                # print(num11)
+                if bytes([aaa]) in dic2:
+                    num_int = num11
+                    while True:
+                        num11 += 1
+                        if bytes([a1[num11]]) not in dic2:
+                            break
+                        next(cola2)
+
+                    cc = a1[num_int:num11].decode("cp932")
+                    if len(cc) > 1:  # \x61 이렇게 1바이트 크기로 추출되는 건 제외.
+                        lll.write(cc + "\n")
+                else:
+                    num11 += 1
+            lll.close()
+            if os.stat(file_name).st_size == 0:  # 빈 텍스트 파일 삭제.
+                print("추출된 시스템문자열(아스키코드)이 없습니다.")
+                os.remove(file_name)
+
         if ans == "3":  # 헥스값 추출
+            save_dir = "헥스값_추출"
+            if not os.path.exists(save_dir):  # 폴더 없으면 만드는 줄
+                os.makedirs(save_dir)
+
             file_name2 = save_dir + "//" + li + "_hex.txt"
             jj2 = open(file_name2, "wb")  # 헥스값으로 보는 용
             for aaa in cola4:
@@ -190,7 +210,7 @@ def main(ans):
                         num += 1
                         continue
 
-                    jj2.write(a1[num:num2])
+                    jj2.write(a1[num:num2] + b"\xff")  # \xff는 구분자로 사용하기 위해서 삽입.
                     for x in range(num2 - num - 1):  # 하나 더 빼줘야 커서 위치가 정확하게 옮겨짐.
                         num += 1
                         next(cola4)
@@ -212,5 +232,5 @@ def main(ans):
 # 3번 헥스 값 추출 기능 추가함.
 
 if __name__ == "__main__":
-    ans = input("1번 일본어만 추출, 2번 아스키코드 추출, 3번 헥스값 추출// 1번 권장 : ")
+    ans = input("1번 일본어만 추출, 2번 시스템문자열(아스키코드) 추출, 3번 헥스값 추출// 1번 권장 : ")
     main(ans)
