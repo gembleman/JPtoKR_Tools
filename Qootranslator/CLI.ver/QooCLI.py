@@ -89,7 +89,7 @@ def main(a22):
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     #pyinstaller로 만든 exe가 멀티프로세스를 쓸 때는 윗줄을 써야 제대로 돌아감.
-    print("Qootrans 0.2.ver !@!번역하려는 텍스트는 utf-8으로 인코딩되었고, .txt 확장자를 가진 텍스트여야 합니다!@!")
+    print("Qootrans ver.0.2 !@!번역하려는 텍스트는 utf-8으로 인코딩되었고, .txt 확장자를 가진 텍스트여야 합니다!@!")
     if len(sys.argv) == 1:
         # 인자가 없으면 실행.
         print("QooCLI (원문 폴더 경로) <-이런 식으로 입력")

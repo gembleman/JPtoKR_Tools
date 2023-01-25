@@ -1,6 +1,7 @@
 import sys
 import qoo_call
 from pathlib import Path
+import multiprocessing
 
 from PyQt5.QtWidgets import *
 from PyQt5 import uic
@@ -63,26 +64,28 @@ class mainWindow(QMainWindow, form_class):
         
 
     def trans1(self):
-        if self.folder2 != None:
+        if self.folder2 != []:
             print('드래그&드롭')
             for folder in self.folder2:
                 a = Qootrans(self,folder)  # 게임 이름 전달
                 a.start()
                 a.wait()
-
-        if self.folder1 == None:  # 게임 폴더 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
-            self.folder1 = QFileDialog.getExistingDirectory(self, "번역할 폴더를 선택하세요")
-            if self.folder1 == "":
-                print("선택을 취소했습니다.")
-                self.folder1 = None
-                return
-            a = Qootrans(self,self.folder1)  # 게임 이름 전달
-            a.start()
+        else:
+            if self.folder1 == None:  # 게임 폴더 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
+                self.folder1 = QFileDialog.getExistingDirectory(self, "번역할 폴더를 선택하세요")
+                if self.folder1 == "":
+                    print("선택을 취소했습니다.")
+                    self.folder1 = None
+                    return
+                a = Qootrans(self,self.folder1)  # 게임 이름 전달
+                a.start()
         
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     myWindow = mainWindow()
     myWindow.show()  # 프로그램 창을 띄움
+    print("쿠우 번역기 ver.0.2 made by gemble\nQuickly Optimized Operations Translator(Qoo Translator)")
     sys.exit(app.exec())
