@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>380</width>
-    <height>480</height>
+    <height>490</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,19 @@
   <property name="minimumSize">
    <size>
     <width>380</width>
-    <height>480</height>
+    <height>490</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>380</width>
-    <height>480</height>
+    <height>490</height>
+   </size>
+  </property>
+  <property name="sizeIncrement">
+   <size>
+    <width>0</width>
+    <height>0</height>
    </size>
   </property>
   <property name="font">
@@ -43,6 +49,12 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <property name="maximumSize">
+    <size>
+     <width>380</width>
+     <height>490</height>
+    </size>
+   </property>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
@@ -58,7 +70,7 @@
      </font>
     </property>
     <property name="text">
-     <string>완타치 추출은 Tool of livemaker 여러 작업을 한 번에 처리합니다.</string>
+     <string>원터치 추출은 Tool of livemaker 여러 작업을 한 번에 처리합니다.</string>
     </property>
    </widget>
    <widget class="QPushButton" name="wantachi">
@@ -79,7 +91,7 @@
      <string>한방에 고고!</string>
     </property>
     <property name="text">
-     <string>완타치 추출</string>
+     <string>원터치 추출</string>
     </property>
    </widget>
    <widget class="QPushButton" name="unpack">
@@ -125,7 +137,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>180</y>
+      <y>280</y>
       <width>281</width>
       <height>31</height>
      </rect>
@@ -146,7 +158,7 @@
     <property name="geometry">
      <rect>
       <x>70</x>
-      <y>230</y>
+      <y>180</y>
       <width>281</width>
       <height>31</height>
      </rect>
@@ -184,24 +196,6 @@
      <string>번역한 텍스트 삽입</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_4">
-    <property name="geometry">
-     <rect>
-      <x>70</x>
-      <y>290</y>
-      <width>291</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Arial</family>
-     </font>
-    </property>
-    <property name="text">
-     <string>&quot;추출한_대사파일&quot; 폴더 내 텍스트 파일을 번역하세요</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_10">
     <property name="geometry">
      <rect>
@@ -217,7 +211,7 @@
      </font>
     </property>
     <property name="text">
-     <string>3단계까지 워프하고 싶나요?</string>
+     <string>5단계까지 워프하고 싶나요?</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_12">
@@ -462,6 +456,38 @@
     </property>
     <property name="orientation">
      <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="trans">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>230</y>
+      <width>281</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="toolTip">
+     <string>&quot;추출한_대사파일&quot; 폴더 내 텍스트 파일을 번역하세요</string>
+    </property>
+    <property name="text">
+     <string>이지트랜스+enhd로 기계 번역</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>430</y>
+      <width>361</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>작업 폴더 경로 설정되지 않음</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
   </widget>

@@ -6,11 +6,16 @@ import livemaker_ins
 import sys
 import subprocess
 from pathlib import Path
+import traceback
 
 from PyQt6.QtWidgets import *
 from PyQt6 import uic
 from PyQt6.QtCore import *
 from PyQt6 import QtGui
+
+# TODO - 2단계하고 3단계를 바꾸고 싶어요. 인코딩변환을 먼저 하지 않고 원문을 그대로 추출하면, 추출하는 원문에 어떠한 손상도 없다는 게 장점임.
+# 원문 위치를 저장하는 알고리즘을 만들어내면 가능하지 않을까요. - 함.
+# TODO - 이지트랜스 번역기 32비트짜리 .exe로 만들기., 번역 버튼 만들기.
 
 
 def resource_path(
@@ -31,6 +36,9 @@ class livemaker(QThread):  # 쓰레드 구현
     def __init__(self, parent, text, ff):
         # parent는 WndowClass에서 전달하는 self이다.(WidnowClass의 인스턴스)
         super().__init__(parent)
+        if ff == None:  # 작업폴더를 설정하지 않았을 경우
+            print("작업폴더를 설정하세요")
+            return "off"
         self.folder = ff
         self.exe_game = Path(self.folder) / "game.exe"  # 경로 생성
         self.text = text
@@ -73,8 +81,7 @@ class livemaker(QThread):  # 쓰레드 구현
                     game_list = self.folder + "/game.dat"
                     game_list2 = 0
                     for li in list1:
-                        hu = re.search("game\.[0-9]{3}", li)
-                        if hu != None:
+                        if re.search("game\.[0-9]{3}", li):
                             game_list = game_list + " + " + li
                             game_list2 += 1
                     if game_list2 != 0:  # game.001,game.002 같은 파일이 없을 경우 파일 합치지 않음.
@@ -115,32 +122,51 @@ class livemaker(QThread):  # 쓰레드 구현
             print("Output 한국어 변환 완료")
 
         if self.text == "extract":
-            im = ["ToolForLiveMaker.exe", "-extt", "--code", "-kor", str(self.output)]
-            self.a = subprocess.Popen(im)
-            self.a.wait()
-            self.a.kill()
+            if len(list(self.output.glob("**/*.ext.txt"))) == 0:
+                # esb 파일이 추출되지 않았을 때에만 실행.
+                print("esb 파일을 txt 파일로 변환합니다.")
+                im = ["ToolForLiveMaker.exe", "-e   xtt", str(self.output)]
+                # 이지트랜스로 번역
+                self.a = subprocess.Popen(im)
+                self.a.wait()
+                self.a.kill()
 
             try:
-                livemaker_ext.main()  # 텍스트 추출 코드 실행
+                livemaker_ext.main(Path(self.folder))  # 텍스트 추출 코드 실행
+            except FileNotFoundError as e:
+                print("Output 폴더를 찾을 수 없음" + str(e))
+                myWindow.folder1 = None  # 폴더 경로 초기화
+                return
             except Exception as e:
                 print("ext.txt, tsv 파일 텍스트 추출 중에 TooloflivemakerGUI에러발생:" + str(e))
+                print(traceback.format_exc())
                 return
             print("추출성공")
 
+        if self.text == "trans":
+            im = ["eztrans_call.exe", str(self.output)]
+            self.a = subprocess.Popen(im)  # esb에다 텍스트 삽입.
+            self.a.wait()
+            self.a.kill()
+
         if self.text == "insert":
             try:
-                livemaker_ins.main()
+                livemaker_ins.main(Path(self.folder))
+            except FileNotFoundError as e:
+                print("Output 폴더를 찾을 수 없음" + str(e))
+                myWindow.folder1 = None  # 폴더 경로 초기화
+                return
             except Exception as e:
                 print("ext.txt, tsv 파일에 번역문 삽입 중에 TooloflivemakerGUI에러발생:" + str(e))
+                print(traceback.format_exc())
                 return
             im = ["ToolForLiveMaker.exe", "-rept", str(self.output)]
             self.a = subprocess.Popen(im)  # esb에다 텍스트 삽입.
-
             self.a.wait()
             self.a.kill()
 
         if self.text == "repack":
-            j = myWindow.comboBox.currentIndex()
+            j = myWindow.comboBox.currentIndex()  # 콤보박스 값 불러옴.
             for path, dirs, files in os.walk(self.output):  # 추출한 텍스트 파일 삭제
                 print(path + "폴더에서 추출한 텍스트 파일 삭제 중...\n")
                 for file in files:
@@ -202,71 +228,55 @@ class mainWindow(QMainWindow, form_class):
         self.setupUi(self)
         self.wantachi.clicked.connect(self.wantachi1)
         self.unpack.clicked.connect(self.unpack1)
+        self.trans.clicked.connect(self.trans1)
         self.locale.clicked.connect(self.locale1)
         self.extract.clicked.connect(self.extract1)
         self.insert.clicked.connect(self.insert1)
         self.repack.clicked.connect(self.repack1)
-
         self.setWindowTitle("ToolForLiveMakerGUI 0.2ver")
         self.setWindowIcon(QtGui.QIcon(icon))
-        self.folder = None
+        self.folder1 = None
 
-    def folder_detect(self):
-        self.folder = QFileDialog.getExistingDirectory(self, "게임 폴더를 선택하세요")
-        print(self.folder)
-
-    def unpack1(self):
-        if self.folder == None:  # 게임 폴더 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
-            self.folder_detect()
-        a = livemaker(self, "unpack", self.folder)  # 게임 이름 전달
+    def livemaker_call(self, commend):
+        if self.folder1 == None:  # 게임 폴더 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
+            self.folder1 = QFileDialog.getExistingDirectory(self, "게임 폴더를 선택하세요")
+            if self.folder1 == "":
+                print("선택을 취소했습니다.")
+                self.folder1 = None
+                return
+        self.label_4.setText(str(self.folder1))
+        a = livemaker(self, commend, self.folder1)  # 게임 이름 전달
         a.start()
         a.wait()
+
+    def unpack1(self):
+        self.livemaker_call("unpack")
         self.checkBox.toggle()
 
     def locale1(self):
-        if self.folder == None:
-            self.folder_detect()
-        a = livemaker(self, "locale", self.folder)
-        a.start()
-        a.wait()
-        self.checkBox_2.toggle()
+        self.livemaker_call("locale")
+        self.checkBox_4.toggle()
 
     def extract1(self):
-        if self.folder == None:
-            self.folder_detect()
-        a = livemaker(self, "extract", self.folder)
-        a.start()
-        a.wait()
+        self.livemaker_call("extract")
+        self.checkBox_2.toggle()
+
+    def trans1(self):
+        self.livemaker_call("trans")
         self.checkBox_3.toggle()
 
     def insert1(self):
-        if self.folder == None:
-            self.folder_detect()
-        a = livemaker(self, "insert", self.folder)
-        a.start()
-        a.wait()
-        self.checkBox_4.toggle()
+        self.livemaker_call("insert")
+        self.checkBox_5.toggle()
 
     def repack1(self):
-        if self.folder == None:
-            self.folder_detect()
-        a = livemaker(self, "repack", self.folder)
-        a.start()
-        a.wait()
+        self.livemaker_call("repack")
         self.checkBox_6.toggle()
 
     def wantachi1(self):  # 한번에 3단계까지 이동.
-        if self.folder == None:
-            self.folder_detect()
-        a = livemaker(self, "unpack", self.folder)  # 언팩
-        a.start()
-        a.wait()
-        # 사월요화는 파일을 교체해줘야 함.
-        self.checkBox.toggle()
+        self.unpack1()
         self.locale1()  # 한국어 인코딩
-        self.checkBox_2.toggle()
         self.extract1()  # 스크립트 추출
-        self.checkBox_3.toggle()
 
 
 if __name__ == "__main__":
