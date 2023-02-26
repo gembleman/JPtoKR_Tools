@@ -37,10 +37,9 @@ def encode_text(txt):
 def main():
     engine_object = WinDLL('C:\Program Files (x86)\ChangShinSoft\ezTrans XP\J2KEngine.dll')
     eng.initialize(engine_object)
-    #app.debug = True
+    print('이지트랜스 웹서버가 작동되고 있습니다.')
     http_server = WSGIServer(('127.0.0.1', 5000), app)
     http_server.serve_forever()
-    
     #app.run()
 
 @app.route("/")
