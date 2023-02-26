@@ -25,7 +25,7 @@ class Qootrans(QThread):  # 쓰레드 구현
     def __init__(self, parent, folder_path):
         # parent는 WndowClass에서 전달하는 self이다.(WidnowClass의 인스턴스)
         super().__init__(parent)
-        self.a22 = folder_path
+        self.a22 = list(set(folder_path))#중복 제거.
 
     def run(self):
         qoo_call.main(self.a22)
@@ -80,7 +80,7 @@ class mainWindow(QMainWindow, form_class):
                 a = Qootrans(self,self.folder1)  # 게임 이름 전달
                 a.start()
         
-
+#todo 드래그 앤 드롭으로 파일을 끌어다놓을 수 있게 하기.
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
