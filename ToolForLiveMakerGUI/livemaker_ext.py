@@ -73,11 +73,13 @@ def main(folder_path):
                 lll = str(list1.relative_to(path_dir)) + "_추출.txt"
                 save_dir2 = save_dir / lll
                 # pathlib으로 상대경로를 얻고 싶을 때.
-                with open(list1, "r", encoding="utf-16", errors="surrogateescape") as jhu:
+                with open(
+                    list1, "r", encoding="utf-16", errors="surrogateescape"
+                ) as jhu:
                     jhu23 = jhu.readlines()
                 list45 = []
                 for line_num, jhu2 in enumerate(jhu23):
-                    #스크립트 감별
+                    # 스크립트 감별
                     if "[EV_OP:01]" in jhu2:
                         k = re.search("(?<=\[◆\]).+?(?=\[◆\])", jhu2)  # 대사 검색
                         coo = k.span()  # 원문 위치 저장용 - 나중에 번역문 삽입할 때 쓰임.
@@ -90,7 +92,9 @@ def main(folder_path):
                         # 원문 복원 함수 호출 - Toolfor라이브메이커 로케일 과정을 이전에 거쳤기 때문에 다시 원문 복원이 필요하게 됨. - 더 최적화 시킬 수 없을까? - 01.15. 로케일 변환 이전에 추출.
                         list45.append(kk + "\n")  # 추출문 저장.
 
-                with open(save_dir2,"w",encoding="utf-8",errors="surrogateescape") as oi:
+                with open(
+                    save_dir2, "w", encoding="utf-8", errors="surrogateescape"
+                ) as oi:
                     oi.writelines(list45)
 
                 if save_dir2.stat().st_size == 0:  # 빈 텍스트 파일 삭제.
