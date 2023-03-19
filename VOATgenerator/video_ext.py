@@ -1,8 +1,8 @@
-import moviepy.editor as mp
+from moviepy.editor import VideoFileClip
 from pathlib import Path
 
 from faster_whisper import WhisperModel
-import torch
+from torch import cuda
 from timedelta import Timedelta
 import send2trash
 from huggingface_hub import snapshot_download
@@ -58,7 +58,7 @@ class recognizion:
         print(self.save_audio)
         print(video_path)
         # ext = Path(video_path).stem
-        self.my_clip = mp.VideoFileClip(video_path)
+        self.my_clip = VideoFileClip(video_path)
         self.my_clip.audio.write_audiofile(self.save_audio)
         
         return self.save_audio
@@ -66,7 +66,7 @@ class recognizion:
     #위스퍼 모델 실행
     def whisper_exe(self, language, file_path):#language = None이면 위스퍼가 auto로 진행됨.
         
-        if torch.cuda.is_available():#cpu, gpu 확인해서 진행.
+        if cuda.is_available():#cpu, gpu 확인해서 진행.
             print("사용할 수 있는 gpu가 있습니다. \nnvidia gpu로 진행합니다.")
             self.device = "cuda"
         else:
@@ -74,7 +74,7 @@ class recognizion:
             self.device = "cpu"
 
         self.language = language
-        model_path = snapshot_download(repo_id= "gemble/whisper-large-v2-ct2-int8_float16" , library_name= "whisper-large-v2-ct2-int8_float16", cache_dir="VoatG/model" )
+        model_path = snapshot_download(repo_id= "gemble/whisper-large-v2-ct2-int8_float16" , library_name= "whisper-large-v2-ct2-int8_float16", cache_dir="VoatG/model" )#model 다운로드
         print(model_path)
         model_path = model_path + "\whisper-large-v2-ct2-int8_float16"
         self.model = WhisperModel(model_path= model_path, device=self.device, compute_type="int8_float16")
