@@ -1,19 +1,16 @@
-from PyQt6.QtWidgets import *
+import PyQt6
+#import webbrowser
+import video_ext
 from PyQt6 import uic
-from PyQt6.QtCore import *
-from PyQt6 import QtGui
-import webbrowser
-
 import sys
-from pathlib import Path
-from video_ext import recognizion
+import pathlib
 
 
 def resource_path(relative_path):
     # pyinstall용 ui파일 불러오지 못하는 문제. https://editor752.tistory.com/140
     # """Get absolute path to resource, works for dev and for PyInstaller"""
-    base_path = getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
-    return base_path / Path(relative_path)
+    base_path = getattr(sys, "_MEIPASS", pathlib.Path(__file__).resolve().parent)
+    return base_path / pathlib.Path(relative_path)
 
 
 icon = str(resource_path("Voat.ico"))
@@ -21,7 +18,7 @@ form = str(resource_path("voat.ui"))  # pyinstall용 ui파일 불러오지 못�
 form_class = uic.loadUiType(form)[0]  # ui 파일 연결
 
 
-class Voatsub(QThread):  # 쓰레드 구현
+class Voatsub(PyQt6.QtCore.QThread):  # 쓰레드 구현
     # 초기화 메서드 구현
     def __init__(self, parent, file_paths):
         # parent는 WndowClass에서 전달하는 self이다.(WidnowClass의 인스턴스)
@@ -30,13 +27,13 @@ class Voatsub(QThread):  # 쓰레드 구현
 
     def run(self):
         self.method_index = [myWindow.comboBox.currentIndex(),myWindow.comboBox_2.currentIndex()]
-        self.call = recognizion(self.filepaths,self.method_index,)
+        self.call = video_ext.recognizion(self.filepaths,self.method_index,)
         
         self.call.run()
         
 
 
-class mainWindow(QMainWindow, form_class):
+class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
     def __init__(self):  # 클래스에서 자동 호출 함수
         super().__init__()
         # 아래는 시그널
@@ -46,26 +43,27 @@ class mainWindow(QMainWindow, form_class):
         #self.sub_lists = {"whisper":['자동선택','tiny','small','medium','large(권장)',]}
 
         self.setWindowTitle("VOATgenerator")
-        self.setWindowIcon(QtGui.QIcon(icon))
+        self.setWindowIcon(PyQt6.QtGui.QIcon(icon))
         self.textBrowser.append("보트 자막생성기 ver.0.2 made by gemble\nVOice Analyzing Text Subtitler(VOATsubtitler)\n오디오나 비디오 파일을 넣어주세요\n음성 타이밍이 들어간 .srt 자막 파일도 함께 넣는 것을 권장합니다\n파일들은 여기다 드래그&드롭")
         self.folder1 = None
         self.filedic = {}
 
         self.one, self.two, self.three = range(3)
         #qtview에 넣을 틀
-        self.model = QtGui.QStandardItemModel(0, 3)
-        self.model.setHeaderData(self.one, Qt.Orientation.Horizontal, "이름")
-        self.model.setHeaderData(self.two, Qt.Orientation.Horizontal, "자막 여부")
-        self.model.setHeaderData(self.three, Qt.Orientation.Horizontal, "Type")
+        self.model = PyQt6.QtGui.QStandardItemModel(0, 3)
+        self.model.setHeaderData(self.one, PyQt6.QtCore.Qt.Orientation.Horizontal, "이름")
+        self.model.setHeaderData(self.two, PyQt6.QtCore.Qt.Orientation.Horizontal, "자막 여부")
+        self.model.setHeaderData(self.three, PyQt6.QtCore.Qt.Orientation.Horizontal, "Type")
         
         self.treeView.setModel(self.model)
         
         #메뉴바 설정
-        self.menu.aboutToShow.connect(self.add_open)
-    
+        #self.menu.aboutToShow.connect(self.add_open)
+    '''
     def add_open(self):
         self.print2("감사합니다!")
         webbrowser.open("https://toss.me/gemble")
+    '''
 
     def print2(self, line):
         self.textBrowser.append(line)
@@ -85,7 +83,7 @@ class mainWindow(QMainWindow, form_class):
         self.file_paths = file_paths
         
         for self.file_path in self.file_paths:
-            self.path2 = Path(self.file_path)
+            self.path2 = pathlib.Path(self.file_path)
             if self.path2.is_file():
                 self.print2("인식할 파일 경로: " + str(self.path2))
                 
@@ -117,16 +115,6 @@ class mainWindow(QMainWindow, form_class):
             else:
                 self.print2(self.file_path + "\n비디오, 오디오 파일만 넣어주세요")
 
-                
-    '''
-    def updateCombo(self, index):
-        self.comboBox_2.clear()
-        
-        index = self.comboBox.currentIndex()
-        if index == 1:
-            index_name = "whisper"
-        self.comboBox_2.addItems(self.sub_lists[index_name])
-    '''
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -145,7 +133,7 @@ class mainWindow(QMainWindow, form_class):
             self.plag = 1
         else:
             if self.folder1 == None:  # 파일 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
-                self.folder1 = QFileDialog.getOpenFileNames(self, "음성 인식할 파일들을 선택하세요")
+                self.folder1 = PyQt6.QFileDialog.getOpenFileNames(self, "음성 인식할 파일들을 선택하세요")
                 print(self.folder1[0])
                 if self.folder1 == "":
                     self.print2("선택을 취소했습니다.")
@@ -166,7 +154,7 @@ class mainWindow(QMainWindow, form_class):
 
 if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
+    app = PyQt6.QtWidgets.QApplication(sys.argv)
     myWindow = mainWindow()
     myWindow.show()  # 프로그램 창을 띄움
     
