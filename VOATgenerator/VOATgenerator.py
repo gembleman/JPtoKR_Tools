@@ -44,7 +44,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
 
         self.setWindowTitle("VOATgenerator")
         self.setWindowIcon(PyQt6.QtGui.QIcon(icon))
-        self.textBrowser.append("보트 자막생성기 ver.0.2 made by gemble\nVOice Analyzing Text Subtitler(VOATsubtitler)\n오디오나 비디오 파일을 넣어주세요\n음성 타이밍이 들어간 .srt 자막 파일도 함께 넣는 것을 권장합니다\n파일들은 여기다 드래그&드롭")
+        self.textBrowser.append("보트 자막생성기 ver.0.2 made by gemble\nVOice Analyzing Text Subtitler(VOATsubtitler)\n오디오나 비디오 파일을 넣어주세요\nsrt자막이 있으면 자막 타이밍에 맞춰 오디오를 쪼갠 다음 인식합니다.\n파일들은 여기다 드래그&드롭")
         self.folder1 = None
         self.filedic = {}
 
@@ -110,7 +110,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
                         self.filedic[self.file_path] = "audio+sub"
                         self.add_file(self.model, self.path2.name, '자막 있음', self.file_ext)
                     else:
-                        self.filedic[self.file_path] = "audio"
+                        self.filedic[self.file_path] = "audio_only"
                         self.add_file(self.model, self.path2.name, '자막 없음', self.file_ext)
             else:
                 self.print2(self.file_path + "\n비디오, 오디오 파일만 넣어주세요")

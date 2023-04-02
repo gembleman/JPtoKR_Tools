@@ -95,14 +95,10 @@ def transcribe_segments(audio_segments, other_whisper_options):
     # transcribe each audio segment
     for i, audio_segment in enumerate(audio_segments):
 
-      print("Segment {} - second {} to {}"
-          .format(i, audio_segment[0], audio_segment[1]))
+      print(f"Segment {i} - second {audio_segment[0]} to {audio_segment[1]}")
 
       # run whisper transcribe on the audio segment
-      result = model.transcribe(audio_segment[2],
-                                task=task, 
-                                verbose=False, 
-                                **other_whisper_options)
+      result = model.transcribe(audio_segment[2],task=task, verbose=False,)
       
 
       print("\nResults with offsets:")
