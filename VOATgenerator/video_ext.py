@@ -110,7 +110,7 @@ class recognizion:
         try:
             codec_name = ffmpeg.probe(self.video_path)['streams'][1]['codec_name']#오디오 코덱 값 찾으려고.
         except Exception as inst:
-            print(inst)
+            print(str(inst))
             print("아마도 비디오 파일에 오디오가 없습니다.")
             return 1#프로세스 종료 코드
         self.audio_path2 = pathlib.Path(video_path).with_suffix('.'+codec_name)
