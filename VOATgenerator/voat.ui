@@ -56,26 +56,6 @@
       <string>Whisper(오프라인)</string>
      </property>
     </item>
-    <item>
-     <property name="text">
-      <string>추가예정</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Google Cloud Speech(온라인)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Azure Speech(온라인)</string>
-     </property>
-    </item>
-    <item>
-     <property name="text">
-      <string>Whisper API(온라인)</string>
-     </property>
-    </item>
    </widget>
    <widget class="QComboBox" name="comboBox_2">
     <property name="geometry">

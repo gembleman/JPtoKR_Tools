@@ -1,15 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys ; sys.setrecursionlimit(sys.getrecursionlimit() * 5)
+from pathlib import Path
+
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('voat.ui', '.')]
+binaries = []
+hiddenimports = []
+tmp_ret = collect_all('librosa')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 block_cipher = None
 
 
 a = Analysis(
-    ['C:\\Users\\nsoop\\Desktop\\workingfolder_current\\JPtoKR_Tools\\VOATgenerator\\VOATgenerator.py'],
+    ['VOATgenerator.py'],
     pathex=[],
-    binaries=[],
-    datas=[],
-    hiddenimports=[],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -19,22 +29,19 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='VOATgenerator',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -42,4 +49,14 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['Voat.ico'],
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name='VOATgenerator',
 )

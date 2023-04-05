@@ -5,7 +5,6 @@ from PyQt6 import uic
 import sys
 import pathlib
 
-
 def resource_path(relative_path):
     # pyinstall용 ui파일 불러오지 못하는 문제. https://editor752.tistory.com/140
     # """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -57,6 +56,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
         
         self.treeView.setModel(self.model)
         
+
         #메뉴바 설정
         #self.menu.aboutToShow.connect(self.add_open)
     '''
@@ -64,6 +64,14 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
         self.print2("감사합니다!")
         webbrowser.open("https://toss.me/gemble")
     '''
+    def keyPressEvent(self, event):#키보드 키를 누르면 호출된다.
+        if event.key() == PyQt6.QtCore.Qt.Key.Key_Delete.value:
+            try:
+                data = self.treeView.selectedIndexes()
+                idx = data[0].row()
+                self.model.removeRow(idx)
+            except:
+                pass#아무것도 선택하지 않고 딜렉트를 눌렀을 경우. 그냥 넘어가도록.
 
     def print2(self, line):
         self.textBrowser.append(line)
@@ -81,7 +89,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
         audio_format = [".aac", ".flac", ".m4a", ".mp3", ".opus", ".wav"]
         
         self.file_paths = file_paths
-        
+
         for self.file_path in self.file_paths:
             self.path2 = pathlib.Path(self.file_path)
             if self.path2.is_file():
@@ -126,7 +134,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
         self.files = [u.toLocalFile() for u in event.mimeData().urls()]
         self.format_rec(self.files)
 
-    def voice_rec(self):
+    def voice_rec(self):#음성 인식 버튼을 눌렀을 때 작동되는 함수.
         self.plag = 0
         if self.filedic != {}:
             self.print2("드래그&드롭")
@@ -145,7 +153,6 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
         if self.plag == 1:
             a = Voatsub(self, self.filedic)  # 파일 이름 전달
             a.start()
-            a.wait()
 
             # 타이밍이 할당된 자막 파일을 넣는 것을 권장합니다.
             # 파일들은 여기다 드래그&드롭
