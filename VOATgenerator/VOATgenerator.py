@@ -70,7 +70,9 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
                 data = self.treeView.selectedIndexes()
                 idx = data[0].row()
                 self.model.removeRow(idx)
-            except:
+                del self.filedic[list(self.filedic)[idx]]
+            except Exception as inst:
+                print('에러메세지:'+str(inst))
                 pass#아무것도 선택하지 않고 딜렉트를 눌렀을 경우. 그냥 넘어가도록.
 
     def print2(self, line):
@@ -141,9 +143,8 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
             self.plag = 1
         else:
             if self.folder1 == None:  # 파일 경로를 이용자가 설정하지 않고 버튼을 눌렀다면, 폴더탐색기가 뜨도록.
-                self.folder1 = PyQt6.QFileDialog.getOpenFileNames(self, "음성 인식할 파일들을 선택하세요")
-                print(self.folder1[0])
-                if self.folder1 == "":
+                self.folder1 = PyQt6.QtWidgets.QFileDialog.getOpenFileNames(self, "음성 인식할 파일들을 선택하세요")
+                if self.folder1[0] == []:
                     self.print2("선택을 취소했습니다.")
                     self.folder1 = None
                     return
