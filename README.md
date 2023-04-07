@@ -2,26 +2,17 @@
 허접한 코드지만, 일단 돌아가긴 돌아간다. 
 
 ## VOATgenerator는 뭔가 
-원래는 제가 쓰려고 만들다가  
-"사용자가 무료, 무제한으로 이용할 수 있는 음성 인식 자막 생성 프로그램(비디오 지원)"  
-이런 거창한 목적을 갖다 붙이고 배포합니다.  
+"사용자가 무료, 무제한으로 이용할 수 있는 로컬 음성인식 자막생성 프로그램(비디오 지원)"  
 
-클로바 노트나, Vrew라는 프로그램이 비슷한 기능으로, 무료로 쓸 수 있는데요.  
-그렇지만, 언젠가 돈을 내고 써야하는 날이 오죠.  
-
-반면, 이 프로그램은 완전 무료입니다. 음성 인식도 나름 괜찮아요.  
-또, 보안상의 이유나 기타 이유로 온라인으로 업로드하기 힘든 오디오 파일도  
-이 프로그램을 쓰면, 로컬 컴퓨터에서 해결할 수 있다는 것도 장점입니다.  
+### 기능
+비디오나 오디오 파일 이름과 같은 이름으로 된 SRT 자막 파일이 있다면 VOAT가 인식합니다.  
+그럼 VOAT가 자막 타이밍에 맞춰 오디오를 잘라내고  
+그 음성에서 인식한 텍스트를 자막 파일에 집어넣습니다.  
 
 지원하는 언어는, 영어, 한국어, 일본어, 중국어, 등이 있습니다.  
 언어 선택은 기본이 자동인데,  
 일본어면 일본어, 영어면 영어로 지정해주면 좋습니다. 별로 차이는 없는데 약간 빨라집니다.  
 윗 네 언어 말고 다른 언어면 자동 인식으로 두세요.  
-
-### 기능
-비디오나 오디오 파일 이름과 같은 이름으로 된 SRT 자막 파일이 있다면 VOAT가 인식합니다.  
-그럼 VOAT가 자막 타이밍에 맞춰 오디오를 잘라내고  
-거기에서 인식한 음성 텍스트를 자막 파일에 집어넣습니다.  
 
 ### 설치 방법
 1.압축파일 다운 받고 압축풀기..  
@@ -51,10 +42,6 @@ VOice Analyzing Text라서 VOAT입니다. 완전 어거지인데..
 [https://github.com/guillaumekln/faster-whisper](https://github.com/guillaumekln/faster-whisper)  
 [https://github.com/librosa/librosa](https://github.com/librosa/librosa)  
 [https://github.com/cdown/srt](https://github.com/cdown/srt)  
-
-
-
-
 
 ## ezTransWeb_fix는 뭔가
 Source by [https://github.com/HelloKS/ezTransWeb](https://github.com/HelloKS/ezTransWeb)  
