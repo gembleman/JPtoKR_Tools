@@ -111,7 +111,7 @@ class recognizion:
             codec_name = ffmpeg.probe(self.video_path)['streams'][1]['codec_name']#오디오 코덱 값 찾으려고.
         except Exception as inst:
             print(str(inst))
-            print("아마도 비디오 파일에 오디오가 없습니다.")
+            print('파일을 찾을 수 없다는 오류가 나왔을 경우 ffmpeg를 설치하세요.')
             return 1#프로세스 종료 코드
         self.audio_path2 = pathlib.Path(video_path).with_suffix('.'+codec_name)
         ffmpeg.input(self.video_path, vn=None).output(str(self.audio_path2), acodec="copy").run()#ffmpeg가 설치되어 있어야 함. 하여튼 이 줄로 오디오 뽑아냄.
@@ -126,8 +126,8 @@ class recognizion:
         model_path = huggingface_hub.snapshot_download(repo_id= "gemble/whisper-large-v2-ct2-int8_float16" , library_name= "whisper-large-v2-ct2-int8_float16", cache_dir="VoatG/model")#model 다운로드
         #print(model_path)
         model_path = model_path + "\whisper-large-v2-ct2-int8_float16"
-        self.model = faster_whisper.WhisperModel(model_path, device = self.device2, compute_type=self.compute_type)
-        
+        self.model = faster_whisper.WhisperModel(model_path, device = self.device2)
+        #compute_type=self.compute_type 빼버림. - float16을 지원하지 않는 그래픽카드도 있음.
         if self.nym == "sub":
             with open(self.file_path_sub, "w", encoding="utf-8") as save:
                 for i, audio_segment in enumerate(self.audio_segments):
@@ -138,7 +138,7 @@ class recognizion:
                     #자막 타이밍에 밀리세컨드까지 통째로 모델에 넣었더니, 오류남. 타이밍에서 세컨드까지만 인식됨. 그래서 세컨드까지만 자름.
                     #12:52.255면 .255를 자르고 12:52만 남겼다는 얘기.
                     self.dumy = str(datetime.timedelta(seconds=audio_segment[0])).split('.')
-                    if len(self.dumy) == 1:#타이밍에 밀리세컨드가 없는 경우. 스플릿으로 안 나눠짐. 그거 처리.
+                    if len(self.dumy) == 1:#타이밍에 밀리세컨드가 .000인 경우. 스플릿으로 안 나눠짐. 그거 처리.
                         self.dumy.append("000")
                     self.startTime = "0" + self.dumy[0] + ","+self.dumy[1][0:3]#00:00:00.123000,000 -> 00:00:00,123
                     self.dumy2 = str(datetime.timedelta(seconds=audio_segment[1])).split('.')
@@ -146,6 +146,7 @@ class recognizion:
                         self.dumy2.append("000")
                     self.endTime = "0" + self.dumy2[0] + ","+self.dumy2[1][0:3]
                     self.script = ""
+
                     for self.segment in self.segments:
                         if self.segment.text[0] == " ":
                             self.script = self.script + self.segment.text[1:]
@@ -161,13 +162,21 @@ class recognizion:
             #음성 분석해서 나온 자막 저장.
             with open(pathlib.Path(file_path).with_suffix('.srt'), "w", encoding="utf-8") as save:
                 for self.segmentId, self.segment in enumerate(self.segments):
-                    self.startTime = "0" + str(datetime.timedelta(seconds=self.segment.start)) + ",000"
-                    self.endTime = "0" + str(datetime.timedelta(seconds=self.segment.end)) + ",000"
+                    self.dumy = str(datetime.timedelta(seconds=self.segment.start)).split('.')
+                    if len(self.dumy) == 1:#타이밍에 밀리세컨드가 000인 경우. 스플릿으로 안 나눠짐. 그거 처리.
+                        self.dumy.append("000")
+                    self.startTime = "0" + self.dumy[0] + ","+self.dumy[1][0:3]#00:00:00.123000,000 -> 00:00:00,123
+
+                    self.dumy2 = str(datetime.timedelta(seconds=self.segment.end)).split('.')
+                    if len(self.dumy2) == 1:
+                        self.dumy2.append("000")
+                    self.endTime = "0" + self.dumy2[0] + ","+self.dumy2[1][0:3]
                     
                     if self.segment.text[0] == " ":
                         self.script = self.segment.text[1:]
                     else:
                         self.script = self.segment.text
+
                     self.segment = f"{self.segmentId + 1}\n{self.startTime} --> {self.endTime}\n{self.script}\n\n"
                     print(self.segment)
                     save.write(self.segment)

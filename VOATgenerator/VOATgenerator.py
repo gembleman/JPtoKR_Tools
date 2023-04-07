@@ -43,7 +43,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
 
         self.setWindowTitle("VOATgenerator")
         self.setWindowIcon(PyQt6.QtGui.QIcon(icon))
-        self.textBrowser.append("보트 자막생성기 ver.0.2 made by gemble\nVOice Analyzing Text Subtitler(VOATsubtitler)\n오디오나 비디오 파일을 넣어주세요\nsrt자막이 있으면 자막 타이밍에 맞춰 오디오를 쪼갠 다음 인식합니다.\n파일들은 여기다 드래그&드롭")
+        self.textBrowser.append("보트 자막생성기 ver.0.2 made by gemble\nVOice Analyzing Text generator(VOATgenerator)\n오디오나 비디오 파일을 넣어주세요\nsrt자막이 있으면 자막 타이밍에 맞춰 오디오를 쪼갠 다음 인식합니다.\n파일들은 여기다 드래그&드롭")
         self.folder1 = None
         self.filedic = {}
 
@@ -70,7 +70,7 @@ class mainWindow(PyQt6.QtWidgets.QMainWindow, form_class):
                 data = self.treeView.selectedIndexes()
                 idx = data[0].row()
                 self.model.removeRow(idx)
-                del self.filedic[list(self.filedic)[idx]]
+                del self.filedic[list(self.filedic)[idx]]#파일을 작업 목록에서 삭제함.
             except Exception as inst:
                 print('에러메세지:'+str(inst))
                 pass#아무것도 선택하지 않고 딜렉트를 눌렀을 경우. 그냥 넘어가도록.
