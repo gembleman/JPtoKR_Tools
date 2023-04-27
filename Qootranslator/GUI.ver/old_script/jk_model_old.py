@@ -13,8 +13,7 @@ import csv
 #from tkinter import Tk
 #import win32clipboard
 
-#import threading
-import multiprocessing
+import threading
 import ctypes
 #from pathlib import Path
 import win32api, win32gui, win32clipboard, win32con
@@ -93,7 +92,7 @@ class Clipboard_Watch:
             for pos_token in self.post_dic.keys():#후처리사전 -
                 post_text = post_text.replace(pos_token,self.post_dic[pos_token])
                 
-            self.ss.writerow([text,post_text])#번역한 스크립트 저장. - 나중에 이 데이터로 모델 개선할 거임.
+            ss.writerow([text,post_text])#번역한 스크립트 저장. - 나중에 이 데이터로 모델 개선할 거임.
             print(post_text)
 
         return 0
@@ -121,20 +120,21 @@ class Clipboard_Watch:
             hwnd = self._create_window()
             ctypes.windll.user32.AddClipboardFormatListener(hwnd)#클립보드 감시자
             win32gui.PumpMessages()
-        with open('script_save.csv','a', newline='', encoding='utf-8-sig') as script_save:#번역결과 기록용
-            self.ss = csv.writer(script_save)
-            th = multiprocessing.Process(target=runner, daemon=True)
-            th.start()
-            while th.is_alive():
-                th.join()
-                #print("무슨 차이임.")
-                pass
+
+        th = threading.Thread(target=runner, daemon=True)
+        th.start()
+        while th.is_alive():
+            th.join()
+            #print("무슨 차이임.")
+            pass
 
     
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
-    clipboard = Clipboard_Watch()
-    clipboard.listen()
+    with open('script_save.csv','a', newline='', encoding='utf-8-sig') as script_save:
+        #r = Tk()
+        ss = csv.writer(script_save)
+        clipboard = Clipboard_Watch()
+        clipboard.listen()
 
 #번역하는 부분을 서브프로세스로 돌리고. 클립보드로 받아오는 부분에 병목이 안 생기도록
 
