@@ -1,20 +1,13 @@
 {
     "engine": "",
-    "api_keys": [
-        {
-            "papago_free_api": {
-                "ID 입력(유료키도 가능)": "Secret 입력(유료키도 가능)"
-            }
-        },
-        {
-            "deepL_api": [
-                "API키를 입력해주세요"
-            ]
-        },
-        {
-            "google_api": []
-        }
-    ],
+    "api_keys": {
+        "papago_free_api": {},
+        "papago_paid_api": {},
+        "deepL_api": [
+            "API키를 입력해주세요"
+        ],
+        "google_api": []
+    },
     "sorce_lang": "",
     "target_lang": ""
 }

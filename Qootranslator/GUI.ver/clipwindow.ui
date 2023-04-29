@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>Form</class>
  <widget class="QWidget" name="Form">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
   <property name="enabled">
    <bool>true</bool>
   </property>
@@ -9,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>182</width>
-    <height>106</height>
+    <width>472</width>
+    <height>111</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,23 +25,21 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QPlainTextEdit" name="plainTextEdit">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>50</y>
-     <width>161</width>
-     <height>20</height>
+     <y>10</y>
+     <width>451</width>
+     <height>91</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">background-color: rgba(0, 0, 0, 0)</string>
+   <property name="readOnly">
+    <bool>true</bool>
    </property>
-   <property name="inputMethodHints">
-    <set>Qt::ImhNone</set>
-   </property>
-   <property name="text">
-    <string>으아아아아</string>
+   <property name="plainText">
+    <string>ㅇ미ㅏ엄지어미러ㅣ다러ㅣㄴ다러ㅣㄴ다러니다러니ㅜㄹ,ㄴ,ㅜ판구판피나ㅓㄷ피ㅏㄴ더ㅣ차더ㅣ너치ㅏㄴ더ㅣㅊㄴ
+ㅁㅇㅁㅈㅇㅁㅇ</string>
    </property>
   </widget>
  </widget>

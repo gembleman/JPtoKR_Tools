@@ -2,14 +2,14 @@ import sys
 import json
 
 # import qoo_call
+import ctypes
+import win32api, win32gui, win32clipboard, win32con
+
+# import trans_api
 from pathlib import Path
 import multiprocessing
-import urllib
-
-from PyQt6 import QtWidgets
-from PyQt6 import uic
-from PyQt6 import QtCore
-from PyQt6 import QtGui
+import threading
+from PyQt6 import QtWidgets, QtCore, QtGui, uic
 
 
 def resource_path(relative_path):
@@ -22,17 +22,74 @@ def resource_path(relative_path):
 icon = str(resource_path("Qoo.ico"))
 form = str(resource_path("qoo.ui"))  # pyinstall용 ui파일 불러오지 못하는 문제 - 해결용
 form_class = uic.loadUiType(form)[0]  # ui 파일 연결
-form2 = str(resource_path("txtwindow.ui"))  # pyinstall용 ui파일 불러오지 못하는 문제 - 해결용
+form2 = str(resource_path("clipwindow.ui"))  # pyinstall용 ui파일 불러오지 못하는 문제 - 해결용
 form_class2 = uic.loadUiType(form2)[0]  # ui 파일 연결
 form3 = str(resource_path("apiwindow.ui"))  # pyinstall용 ui파일 불러오지 못하는 문제 - 해결용
 form_class3 = uic.loadUiType(form3)[0]  # ui 파일 연결
 
 
+# qt쓰레드 영역 시작.
+# https://abdus.dev/posts/monitor-clipboard/
+class Clipboard_Watch(QtCore.QThread):
+    signal = QtCore.pyqtSignal(str)  # 반드시 클래스 변수로 선언할 것
+
+    def __init__(self):
+        super().__init__()
+
+    def _create_window(self) -> int:
+        """
+        Create a window for listening to messages
+        :return: window hwnd
+        """
+        wc = win32gui.WNDCLASS()
+        wc.lpfnWndProc = self._process_message
+        wc.lpszClassName = self.__class__.__name__
+        wc.hInstance = win32api.GetModuleHandle(None)
+        class_atom = win32gui.RegisterClass(wc)
+        return win32gui.CreateWindow(class_atom, self.__class__.__name__, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
+
+    def _process_message(self, hwnd: int, msg: int, wparam: int, lparam: int):
+        WM_CLIPBOARDUPDATE = 0x031D
+        if msg == WM_CLIPBOARDUPDATE:
+            # 여기가 출력하는 부분.- 가장 중요!!!!
+            text = self.read_clipboard()
+            if not text:
+                return
+            print(text)
+            self.signal.emit(text)  # 시그널 발생
+        return 0
+
+    @staticmethod
+    def read_clipboard():
+        try:
+            win32clipboard.OpenClipboard()
+
+            def get_formatted(fmt):
+                if win32clipboard.IsClipboardFormatAvailable(fmt):
+                    return win32clipboard.GetClipboardData(fmt)
+                return None
+
+            if text := get_formatted(win32con.CF_UNICODETEXT):
+                return text
+
+            return None
+        finally:
+            win32clipboard.CloseClipboard()
+
+    def run(self):
+        hwnd = self._create_window()
+        ctypes.windll.user32.AddClipboardFormatListener(hwnd)  # 클립보드 감시자
+        win32gui.PumpMessages()
+
+    def __del__(self):
+        print("클립보드 프로세스 종료")
+
+
 class Qootrans(QtCore.QThread):  # 쓰레드 구현
     # 초기화 메서드 구현
-    def __init__(self, parent, folder_path):
+    def __init__(self, folder_path):
         # parent는 WndowClass에서 전달하는 self이다.(WidnowClass의 인스턴스)
-        super().__init__(parent)
+        super().__init__()
         self.a22 = list(set(folder_path))  # 중복 제거.
 
     def run(self):
@@ -43,11 +100,30 @@ class Qootrans(QtCore.QThread):  # 쓰레드 구현
         print("프로세스 종료")
 
 
+# qt쓰레드 영역 끝.
+
+
 class clipwindow(QtWidgets.QMainWindow, form_class2):  # 클립보드를 번역한 텍스트를 보여주는 창
+    # 커스텀 시그널 https://marinelifeirony.tistory.com/81
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("번역된 텍스트")
+        self.setWindowIcon(QtGui.QIcon(icon))
+
+        # self.label.setText("번역된 텍스트가 여기에 표시됩니다.")
+        self.clipboard = Clipboard_Watch()
+        self.clipboard.signal.connect(self.update_text)
+        self.clipboard.start()
+        self.show()
+
+    # customFunc에서 emit 메서드 실행시 GUI에서 받음.
+    @QtCore.pyqtSlot(str)
+    def update_text(self, text):
+        self.plainTextEdit.setPlainText(text)
+
+    def __del__(self):
+        print("창 종료")
 
 
 class apiwindow(QtWidgets.QMainWindow, form_class3):  # API키 입력하는 창
@@ -92,18 +168,18 @@ class apiwindow(QtWidgets.QMainWindow, form_class3):  # API키 입력하는 창
             try:
                 papago_secret = self.listWidget_8.item(n).text()
             except:
-                print("Secret을 입력하지 않았습니다.")
+                print("Secret을 입력하지 않았어요.")
                 continue
             if papago_cilent_id in ["API키 입력", "ID 입력"] or papago_secret in ["API키 입력", "Secret 입력"]:
-                print("ID나 Secret을 입력하지 않았습니다.")
+                print("ID나 Secret을 입력하지 않았어요.")
                 continue
 
             if len(papago_cilent_id) == 20 and len(papago_secret) == 10:
                 api_keys_dic["papago_free_api"][papago_cilent_id] = papago_secret
-            if len(papago_cilent_id) == 10 and len(papago_secret) == 40:
+            elif len(papago_cilent_id) == 10 and len(papago_secret) == 40:
                 api_keys_dic["papago_paid_api"][papago_cilent_id] = papago_secret
-            if len(papago_cilent_id) not in [10, 20] or len(papago_secret) not in [10, 40]:
-                print("파파고 api키가 아닙니다.")
+            else:
+                print("파파고 api키가 아니에요, 다시 입력해주세요")
                 continue
 
         for n in range(self.listWidget_5.count()):  # deepL_api용
@@ -184,7 +260,6 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
 
     def clipwindow(self):  # 클립보드를 번역한 텍스트를 보여주는 창
         self.clip = clipwindow()
-        self.clip.show()
 
     def openapi(self):  # API키 입력하는 창
         # https://www.pythonguis.com/tutorials/creating-multiple-windows/ - 참고함. - 창을 띄웠다가 닫고 다시 띄우면 이전 창의 메모리가 초기화되버리는 문제 해결.
