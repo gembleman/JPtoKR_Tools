@@ -4,6 +4,7 @@ import json
 # import qoo_call
 from pathlib import Path
 import multiprocessing
+import urllib
 
 from PyQt6 import QtWidgets
 from PyQt6 import uic
@@ -49,7 +50,7 @@ class clipwindow(QtWidgets.QMainWindow, form_class2):  # 클립보드를 번역�
         self.setWindowTitle("번역된 텍스트")
 
 
-class apiwindow(QtWidgets.QMainWindow, form_class3):  # api키를 입력하는 창
+class apiwindow(QtWidgets.QMainWindow, form_class3):  # API키 입력하는 창
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -62,6 +63,7 @@ class apiwindow(QtWidgets.QMainWindow, form_class3):  # api키를 입력하는 �
         self.listWidget.openPersistentEditor(self.listWidget.item(0))
         pass
         # qoo_call.addapi(self.lineEdit.text())
+
     """
 
     def keyPressEvent(self, qKeyEvent):
@@ -71,7 +73,7 @@ class apiwindow(QtWidgets.QMainWindow, form_class3):  # api키를 입력하는 �
             self.currentitem = self.currentwidget.currentItem()
 
             if self.currentwidget.isPersistentEditorOpen(self.currentitem) == False:
-                self.item = QtWidgets.QListWidgetItem("API키를 입력해주세요.")  # 엔터 키가 눌렸을 때, 추가되는 아이템.
+                self.item = QtWidgets.QListWidgetItem("API키 입력")  # 엔터 키가 눌렸을 때, 추가되는 아이템.
                 self.item.setFlags(self.item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
                 self.currentwidget.addItem(self.item)
                 self.currentwidget.setCurrentItem(self.item)
@@ -79,53 +81,48 @@ class apiwindow(QtWidgets.QMainWindow, form_class3):  # api키를 입력하는 �
 
     def closeEvent(self, event):
         print(myWindow.setting)
-        self.papago_free_api = {"papago_free_api": {}}  #
-        self.papago_paid_api = {"papago_paid_api": {}}  # 파파고 요금 좀 낮춰주세요.
-        self.deepL_api = {"deepL_api": []}
-        self.google_api = {"google_api": []}
-        myWindow.setting["api_keys"] = []  # api키를 저장하는 리스트를 초기화시킨다.
+        api_keys_dic = {"papago_free_api": {}, "papago_paid_api": {}, "deepL_api": [], "google_api": []}  #
+        # 파파고 요금 좀 낮춰주세요.
+        myWindow.setting["api_keys"] = {}  # api키를 저장하는 딕셔너리를 초기화시킨다.
 
-        for n in range(self.listWidget_1.count()):  # papago_free_api용_cilent ID
-            free_cilent_id = self.listWidget_1.item(n).text()
+        # papago 오픈api 키나 pro키나 똑같은 입력창에 입력하도록 만들기. 굳이 따로 나눌 필요 없음. 프로그램이 알아서 인식하게 만들면 됨.
+        # 무료키는 무조건 id는 20글자, secret는 10글자. 유료키는 id는 10글자, secret은 40글자.
+        for n in range(self.listWidget_7.count()):  # papago_api용_cilent ID
+            papago_cilent_id = self.listWidget_7.item(n).text()
             try:
-                free_secret = self.listWidget_2.item(n).text()
+                papago_secret = self.listWidget_8.item(n).text()
             except:
+                print("Secret을 입력하지 않았습니다.")
                 continue
-            if free_cilent_id == "ID 입력" or free_secret == "Secret 입력":
+            if papago_cilent_id in ["API키 입력", "ID 입력"] or papago_secret in ["API키 입력", "Secret 입력"]:
                 print("ID나 Secret을 입력하지 않았습니다.")
                 continue
-            print(free_cilent_id)
-            self.papago_free_api["papago_free_api"][free_cilent_id] = free_secret
-        myWindow.setting["api_keys"].append(self.papago_free_api)
 
-        for n in range(self.listWidget_3.count()):  # papago_paid_api용
-            paid_cilent_id = self.listWidget_3.item(n).text()
-            try:
-                paid_secret = self.listWidget_4.item(n).text()
-            except:
+            if len(papago_cilent_id) == 20 and len(papago_secret) == 10:
+                api_keys_dic["papago_free_api"][papago_cilent_id] = papago_secret
+            if len(papago_cilent_id) == 10 and len(papago_secret) == 40:
+                api_keys_dic["papago_paid_api"][papago_cilent_id] = papago_secret
+            if len(papago_cilent_id) not in [10, 20] or len(papago_secret) not in [10, 40]:
+                print("파파고 api키가 아닙니다.")
                 continue
-            if paid_cilent_id == "ID 입력" or paid_secret == "Secret 입력":
-                print("ID나 Secret을 입력하지 않았습니다.")
-                continue
-            print(paid_cilent_id)
-            self.papago_paid_api["papago_paid_api"][paid_cilent_id] = paid_secret
-        myWindow.setting["api_keys"].append(self.papago_paid_api)
 
         for n in range(self.listWidget_5.count()):  # deepL_api용
-            if self.listWidget_5.item(n).text() == "API키를 입력해주세요":
+            deepL_key = self.listWidget_5.item(n).text()
+            if deepL_key == "API키 입력":
                 continue
-            print(self.listWidget_5.item(n).text())
-            self.deepL_api["deepL_api"].append(self.listWidget_5.item(n).text())
-        myWindow.setting["api_keys"].append(self.deepL_api)
+            print(deepL_key)
+            api_keys_dic["deepL_api"].append(deepL_key)
 
         for n in range(self.listWidget_6.count()):  # google_api용
-            if self.listWidget_6.item(n).text() in ["API키를 입력해주세요", "유료 API키를 적어주세요. 무료 버전이 작동하지 않으면 쓰입니다."]:
+            google_key = self.listWidget_6.item(n).text()
+            if google_key in ["API키 입력", "유료 API키를 적어주세요. 무료 버전이 작동하지 않으면 쓰입니다."]:
                 continue
-            print(self.listWidget_6.item(n).text())
-            self.google_api["google_api"].append(self.listWidget_6.item(n).text())
-        myWindow.setting["api_keys"].append(self.google_api)
+            print(google_key)
+            api_keys_dic["google_api"].append(google_key)
 
-        print("닫힘")
+        myWindow.setting["api_keys"] = api_keys_dic
+
+        print("창 닫힘")
 
 
 # 화면을 띄우는데 사용할 class
@@ -170,17 +167,17 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
                               "베트남어": ["한국어"], "인도네시아어": ["한국어"],
                               "태국어": ["한국어"], "독일어": ["한국어"], "러시아어": ["한국어"],
                               "스페인어": ["한국어"], "이탈리아어": ["한국어"], "프랑스어": ["한국어", "영어"]}
-        self.deepL_langs = ["한국어", "일본어", "영어", "중국어", "불가리아어", "체코어","덴마크어","독일어","그리스어","스페인어","에스토니아어","핀란드어","프랑스어","헝가리어",
+        self.deepL_langs = ["자동감지","한국어", "일본어", "영어", "중국어", "불가리아어", "체코어","덴마크어","독일어","그리스어","스페인어","에스토니아어","핀란드어","프랑스어","헝가리어",
                             "인도네시아어","이탈리아어","리투아니아어","라트비아어","노르웨이어","네덜란드어","폴란드어","포르투갈어","루마니아어","러시아어","슬로바키아어",
                             "슬로베니아어","스웨덴어","터키어","우크라이나어"]
-        self.google_langs = ["한국어","일본어","영어","중국어 간체", "중국어 번체","포르투갈어", "스페인어", "프랑스어", "독일어", "베트남어", "튀르키예어",
+        self.google_langs = ["자동감지","한국어","일본어","영어","중국어 간체", "중국어 번체","포르투갈어", "스페인어", "프랑스어", "독일어", "베트남어", "튀르키예어",
                              "아프리칸스어","알바니아어","암하라어","아랍어","아르메니아어","아제르바이잔어","밤바라어","바스크어","벨라루스어",
                              "벵골어","보지푸리어","불가리아어","카탈루냐어","세부아노어", "코르시카어","크로아티아어","체코어","덴마크어","디베히어","도그리어","네덜란드어","에스페란토어",
                              "에스토니아어","에웨어","필리핀어","프리지아어","갈리시아어","조지아어","그리스어","과라니아어","구자라트어","아이티크리올어","하우사어","하와이어","히브리어",
-                             "힌디어","몽어","헝가리어","아이슬란드어","이보어","일로카노어","인도네시아어","아일랜드어","자바어","칸나디아어","카자흐어","크메르어","키냐르완다어","콘칸어","크리오어",
+                             "힌디어","몽어","헝가리어","아이슬란드어","이보어","일로카노어","인도네시아어","아일랜드어","자바어","칸나디어","카자흐어","크메르어","키냐르완다어","콘칸어","크리오어",
                              "쿠르드어","소라니어","키르기스어","라오어","라틴어","라트비아어","링갈라어","리투아니아어","루간다어","룩셈베르크어","마케도니아어","마이틸리어","말라가시어","말레이어",
                              "말라얄람어","몰타어","마오리어","마라티어","메이테이어","미조어","몽골어","미얀마어","네팔어","노르웨이어","니안자어","오리야어","오로모어","파슈토어","페르시아어",
-                             "폴란드어","펀자브어","케추아어","루마니아어","러시아어","사모아어","산스크리트어","스코틀랜드 게일어","북소토어","세르비아어","세소토어","쇼나어","신디어",
+                             "폴란드어","펀자브어","케추아어","루마니아어","러시아어","사모아어","산스크리트어","게일어","북소토어","세르비아어","세소토어","쇼나어","신디어",
                              "스리랑카어","슬로바키아어","슬로베니아어","소말리어","순다어","스와힐리어","스웨덴어","필리핀어","타지크어","타밀어","타타르어","텔루구어","태국어","티그리냐어",
                              "총가어","투르크멘어","트위어","우크라이나어","우르두어","위구르어","우즈베크어","웨일즈어","코사어","이디시어","요루바어","줄루어"]
         # fmt: on
@@ -189,7 +186,7 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
         self.clip = clipwindow()
         self.clip.show()
 
-    def openapi(self):  # api키를 입력하는 창
+    def openapi(self):  # API키 입력하는 창
         # https://www.pythonguis.com/tutorials/creating-multiple-windows/ - 참고함. - 창을 띄웠다가 닫고 다시 띄우면 이전 창의 메모리가 초기화되버리는 문제 해결.
         if self.api == None:  # 처음에 생성해야 하는 경우를 제외하고 api창을 새로 생성하지 말도록 하면 됨.
             self.api = apiwindow()
@@ -281,7 +278,7 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mainWindow()
     myWindow.show()  # 프로그램 창을 띄움
-    print("쿠우 번역기 ver.0.2 made by gemble\nQuickly Optimized Operations Translator(QooTrans)")
+    print("쿠우 번역기 ver.0.2 made by gemble\nQuickly Optimized Operations Translator")
     sys.exit(app.exec())
 
 # todo 번역 엔진 콤보 박스 언어 선택지 구현하기.
@@ -289,3 +286,5 @@ if __name__ == "__main__":
 # todo 이지트랜스 32비트 exe만들기. - 이름은 eztrans32_api.exe
 # todo 클립보드 번역문 띄우는 창 구현하기.
 # 번역 api 구현 - 파파고api는 무료부터 쓰도록, 그 다음은 유료키쓰는 거로.
+# 나중에는 후킹까지 구현해서 번역할 수 있도록.
+# 쿠우 번역기와 쿠우트랜스는 엄밀히 말해서 다름. 쿠우트랜스는 일한번역 모델임.

@@ -2,32 +2,9 @@
     "engine": "",
     "api_keys": [
         {
-            "papago_free_api": [
-                "API키를 입력해주세요"
-            ]
-        },
-        {
-            "papago_paid_api": [
-                "API키를 입력해주세요"
-            ]
-        },
-        {
-            "deepL_api": [
-                "API키를 입력해주세요"
-            ]
-        },
-        {
-            "google_api": []
-        },
-        {
-            "papago_free_api": [
-                "API키를 입력해주세요"
-            ]
-        },
-        {
-            "papago_paid_api": [
-                "API키를 입력해주세요"
-            ]
+            "papago_free_api": {
+                "ID 입력(유료키도 가능)": "Secret 입력(유료키도 가능)"
+            }
         },
         {
             "deepL_api": [
