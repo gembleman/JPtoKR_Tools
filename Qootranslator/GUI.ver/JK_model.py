@@ -83,10 +83,10 @@ class Clipboard_Watch:
             ctypes.windll.user32.AddClipboardFormatListener(hwnd)  # 클립보드 감시자
             win32gui.PumpMessages()
 
-            th = threading.Thread(target=runner, daemon=True)
-            th.start()
-            while th.is_alive():
-                th.join()
+        th = threading.Thread(target=runner, daemon=True)
+        th.start()
+        while th.is_alive():
+            th.join()
 
 
 if __name__ == "__main__":

@@ -71,7 +71,7 @@
      <string notr="true"/>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="widget1">
      <attribute name="title">
@@ -85,6 +85,9 @@
         <width>81</width>
         <height>23</height>
        </rect>
+      </property>
+      <property name="toolTip">
+       <string>클립보드 텍스트를 번역합니다</string>
       </property>
       <property name="text">
        <string>번역 시작</string>
@@ -182,6 +185,9 @@
          <height>23</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>번역 엔진을 바꿉니다</string>
+       </property>
        <item>
         <property name="text">
          <string>쿠우트랜스</string>
@@ -217,6 +223,9 @@
          <height>23</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>API키를 입력합니다</string>
+       </property>
        <property name="text">
         <string>API키 넣기</string>
        </property>
@@ -242,6 +251,9 @@
          <width>76</width>
          <height>22</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>일본어</string>
        </property>
        <item>
         <property name="text">
@@ -299,6 +311,9 @@
          <height>22</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>한국어</string>
+       </property>
        <item>
         <property name="text">
          <string>한국어</string>
@@ -340,6 +355,9 @@
          <height>16</height>
         </rect>
        </property>
+       <property name="toolTip">
+        <string>불투명도를 조절합니다</string>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -352,6 +370,9 @@
          <width>75</width>
          <height>23</height>
         </rect>
+       </property>
+       <property name="toolTip">
+        <string>폰트를 설정합니다</string>
        </property>
        <property name="text">
         <string>폰트 설정</string>

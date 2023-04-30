@@ -30,8 +30,8 @@ form_class3 = uic.loadUiType(form3)[0]  # ui 파일 연결
 
 # qt쓰레드 영역 시작.
 # https://abdus.dev/posts/monitor-clipboard/
-# qthread를 다시 짜보기로 함. - 0430 - 클립보드 감시자는 qthread 쓰지 않기로 함. 종료가 안됨. - 프로세스 하나 더 만들어서 해결.(다만, 느림.)
-# 멀티프로세스로 해결하는 건 폐기. 그냥 qthread 써서 버튼 클릭에 따라 텍스트 표시 여부를 결정하도록 함. - 그러니까. qthread는 계속 돌아가고 있다는 얘기.
+# qthred를 다시 짜보기로 함. - 0430 - 클립보드 감시자는 qthread 쓰지 않기로 함. 종료가 안됨. - 프로세스 하나 더 만들어서 해결.(다만, 느림.)
+# 멀티프로세스로 해결하는 건 폐기. 그냥 qthread 써서
 
 
 # class Clipboard_Watch(QtCore.QThread): 안 씀.
@@ -54,6 +54,7 @@ class Clipboard_Watch(QtCore.QObject):
         wc.hInstance = win32api.GetModuleHandle(None)
         class_atom = win32gui.RegisterClass(wc)  # 단, 한 번만 실행할 수 있음. 때문에 클래스를 만들 때마다 실행하면 안됨.
         # 에러 메세지: pywintypes.error: (1410, 'RegisterClass', '클래스가 이미 있습니다.')
+        # 일단 클래스를 그때그때마다 일시정지 하는 거로 해결.
         return win32gui.CreateWindow(class_atom, self.__class__.__name__, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
 
     def _process_message(self, hwnd: int, msg: int, wparam: int, lparam: int):
@@ -63,7 +64,7 @@ class Clipboard_Watch(QtCore.QObject):
             text = self.read_clipboard()
             if not text:
                 return
-            # print(text)
+            print(text)
             self.signal.emit(text)  # 시그널 발생
         return 0
 
@@ -86,8 +87,17 @@ class Clipboard_Watch(QtCore.QObject):
 
     def run(self):
         print("클립보드 프로세스 시작")
-        win32gui.PumpMessages()  # 얘가 무한 반복. - 어떻게 멈추는지 모르겠음.# win32gui.PumpWaitingMessages()
-        # 프로세스로 분리해서 종료시킴. 근데 이러면 느림. Q쓰레드를 쓰되, 클립보드 텍스트를 출력하지 않으면 될 듯.
+        # win32gui.PumpMessages()  # 얘가 무한 반복. - 어떻게 멈추는지 모르겠음.# win32gui.PumpWaitingMessages() - 프로세스로 분리해서 종료시킴.
+
+        # self.th = threading.Thread(target=runner, daemon=True)
+        # self.th.start()
+
+        self.th = multiprocessing.Process(target=win32gui.PumpMessages, daemon=True)
+        self.th.start()
+
+    def stop(self):
+        print("클립보드 프로세스 종료")
+        self.th.terminate()
 
 
 class Qootrans(QtCore.QThread):  # 쓰레드 구현
@@ -111,28 +121,25 @@ class Qootrans(QtCore.QThread):  # 쓰레드 구현
 
 
 class clipwindow(QtWidgets.QMainWindow, form_class2):  # 클립보드를 번역한 텍스트를 보여주는 창
-    # signal2 = QtCore.pyqtSignal()  # 반드시 클래스 변수로 선언할 것
+    signal2 = QtCore.pyqtSignal()  # 반드시 클래스 변수로 선언할 것
 
     # 커스텀 시그널 https://marinelifeirony.tistory.com/81
-    def __init__(self, font, stat):
+    def __init__(self, font):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("번역된 텍스트")
         self.setWindowIcon(QtGui.QIcon(icon))
         self.textEdit.setCurrentFont(font)
         # self.label.setText("번역된 텍스트가 여기에 표시됩니다.")
-        self.stat = stat  # 버튼 클릭 여부를 저장하는 변수
 
     # customFunc에서 emit 메서드 실행시 GUI에서 받음.
     @QtCore.pyqtSlot(str)
     def update_text(self, text):
-        if self.stat == True:
-            self.textEdit.setPlainText(text)
+        self.textEdit.setPlainText(text)
 
     def closeEvent(self, event):
-        # self.signal2.emit()  # 쓰레드 일시정지 보내는 신호- 안 하면 안 꺼지고 돌아가고 있음..(실패 폐기)
+        self.signal2.emit()  # 쓰레드 일시정지 보내는 신호- 안 하면 안 꺼지고 돌아가고 있음..
         print("클립보드 창 종료")
-        self.stat = False
 
 
 class apiwindow(QtWidgets.QMainWindow, form_class3):  # API키 입력하는 창
@@ -233,7 +240,6 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
         self.worker_thread = None
         self.clipboard = None
         self.clip = None
-        self.stat = True
         self.font = QtGui.QFont("Arial", 10)
         self.setting = {
             "engine": "",
@@ -274,16 +280,14 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
         # fmt: on
 
     def clipwindow(self):  # 클립보드를 번역한 텍스트를 보여주는 창
-        self.stat = True
-        self.clip = clipwindow(self.font, self.stat)  # 버튼을 누를 때마다 매번 새로 갱신됨.
+        if self.clip == None:
+            self.clip = clipwindow(self.font)
         if self.clipboard == None:
             self.clipboard = Clipboard_Watch()
-        if self.worker_thread == None:
-            self.worker_thread = QtCore.QThread()
-            self.clipboard.moveToThread(self.worker_thread)
-            self.worker_thread.start()
+
         self.clipboard.signal.connect(self.clip.update_text)
-        # self.clip.signal2.connect(self.clipboard.stop)
+        self.clip.signal2.connect(self.clipboard.stop)
+        self.clipboard.run()
         self.clip.show()
 
     def openapi(self):  # API키 입력하는 창
@@ -333,13 +337,13 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
             if Path(f).is_dir():
                 print("번역할 폴더 경로: " + f)
                 self.folder2.append(f)
-                self.listWidget_2.addItem(Path(f).name)  # 경로 전체가 아니라 파일이나 폴더 이름만 넣기.
+                self.listWidget_2.addItem(f)
             elif Path(f).is_file() and Path(f).suffix == ".txt":
                 print("번역할 파일 경로: " + f)
                 self.folder2.append(f)
-                self.listWidget_2.addItem(Path(f).name)
+                self.listWidget_2.addItem(f)
             else:
-                print(f + "\n텍스트 파일 및 폴더가 아닙니다...")
+                print(f + "\n이건 파일인데...")
 
     def fontwindow(self):
         font, ok = QtWidgets.QFontDialog.getFont()

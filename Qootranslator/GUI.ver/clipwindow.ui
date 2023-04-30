@@ -25,21 +25,14 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QPlainTextEdit" name="plainTextEdit">
+  <widget class="QTextEdit" name="textEdit">
    <property name="geometry">
     <rect>
-     <x>10</x>
+     <x>3</x>
      <y>10</y>
-     <width>451</width>
+     <width>461</width>
      <height>91</height>
     </rect>
-   </property>
-   <property name="readOnly">
-    <bool>true</bool>
-   </property>
-   <property name="plainText">
-    <string>ㅇ미ㅏ엄지어미러ㅣ다러ㅣㄴ다러ㅣㄴ다러니다러니ㅜㄹ,ㄴ,ㅜ판구판피나ㅓㄷ피ㅏㄴ더ㅣ차더ㅣ너치ㅏㄴ더ㅣㅊㄴ
-ㅁㅇㅁㅈㅇㅁㅇ</string>
    </property>
   </widget>
  </widget>
