@@ -1,14 +1,15 @@
 import sys
 import json
 
-# import qoo_call
+# import call_eztrans
 import ctypes
 import win32api, win32gui, win32clipboard, win32con
 
 # import trans_api
 from pathlib import Path
-import multiprocessing
-import threading
+
+# import multiprocessing
+# import threading
 from PyQt6 import QtWidgets, QtCore, QtGui, uic
 
 
@@ -216,9 +217,9 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
         super().__init__()
         # 아래는 시그널
         self.setupUi(self)
-        self.trans_button.clicked.connect(self.trans1)
         self.groupBox_2.setVisible(False)
         self.apiButton.setVisible(False)
+        self.trans_button.clicked.connect(self.file_trans)
         self.comboBox_2.currentIndexChanged.connect(self.combo)
         self.comboBox_6.currentIndexChanged.connect(self.set_targetlang)
         self.apiButton.clicked.connect(self.openapi)
@@ -347,7 +348,7 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
             print(font)
             self.font = font
 
-    def trans1(self):  # 파일 번역 시작하는 버튼
+    def file_trans(self):  # 파일 번역 시작하는 버튼
         if self.folder2 != []:
             print("드래그&드롭")
             for folder in self.folder2:
@@ -380,7 +381,7 @@ class mainWindow(QtWidgets.QMainWindow, form_class):
 # todo 드래그 앤 드롭으로 파일을 끌어다놓을 수 있게 하기.
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
+    # multiprocessing.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
     myWindow = mainWindow()
     myWindow.show()  # 프로그램 창을 띄움
