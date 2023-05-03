@@ -33,9 +33,9 @@ class TransEngine:
             a23 = a22 / "번역한_텍스트"
             a23.mkdir(exist_ok=True)
             a24 = list(a22.glob("**/*.txt"))
+        start_time = time.perf_counter()
         with multiprocessing.Pool() as pool:
             for a1 in a24:
-                start_time = time.perf_counter()
                 # 텍스트 번역
                 # 개별 버전에서는 추출이란 문자가 들어가 있지 않아도 번역이 되도록
                 # pathlib에서 glob은 재귀적인 처리를 할 수 있게 해줌. 반복자로 값을 만들기 때문에 리스트로 변환.
@@ -60,8 +60,8 @@ class TransEngine:
                 with open(str(file_path) + "_번역.txt", "w", encoding="utf-8-sig") as c:
                     c.writelines(aaa)
 
-                end_time = time.perf_counter()
-                print(f"번역에 든 시간 : {int(round((end_time - start_time) * 1000))}ms")
+        end_time = time.perf_counter()
+        print(f"번역에 든 시간 : {int(round((end_time - start_time) * 1000))}ms")
 
 
 try:
@@ -96,6 +96,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         # 인자가 없으면 실행됨.
         print("call_eztrans file_mode (원문 폴더 경로) <-이런 식으로 입력")
+        eng.main(r"번역할 경로")  # 번역에 든 시간 : 15557ms - 15.5초
         input()  # 코드 정지용
         sys.exit()
 
