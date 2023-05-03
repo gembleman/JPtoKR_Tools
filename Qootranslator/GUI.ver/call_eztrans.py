@@ -6,8 +6,9 @@ import concurrent.futures
 import time
 import sys
 import multiprocessing
-from tqdm import tqdm
-from threading import RLock
+
+# from tqdm import tqdm
+# from threading import RLock
 
 
 class TransEngine:
@@ -34,25 +35,21 @@ eng.initialize(engine_object)
 
 
 def clip_trans(text):  # 클립보드 번역용
-    global bar
     try:
         a = eng.trans(0, "".join(["|:_", text])).lstrip("|:_")
-        # bar.update(1)
         return a
     except Exception as e:
-        # bar.update(1)
         return str(e)
 
 
 def main(a22):  # 텍스트 파일들 번역용, 텍스트 파일 목록만 전달 받도록 함.
-    global bar  # tqdm을 멀티프로세싱으로 돌리기 위해 전역변수로 선언.
     path = pathlib.Path(a22)
     a23 = (path.parent.joinpath("번역한_텍스트"), path.joinpath("번역한_텍스트"))
     if path.is_file():  # 파일을 넣었을 시
-        a24, save_path1 = (path,), a23[0]
+        a24, save_path1 = [path], a23[0]
         save_path1.mkdir(exist_ok=True)
     else:  # 폴더를 넣었을 시
-        a24, save_path1 = (path.glob("**/*.txt")), a23[1]
+        a24, save_path1 = list(path.glob("**/*.txt")), a23[1]
         try:
             save_path1.mkdir()
         except FileExistsError:
@@ -60,78 +57,33 @@ def main(a22):  # 텍스트 파일들 번역용, 텍스트 파일 목록만 전�
             a24 = [s for s in a24 if "\\번역한_텍스트\\" not in str(s)]
 
     start_time = time.perf_counter()  # 시간 재기.
+    # 저장할 파일 경로 생성
+    save_paths = ["".join([str(save_path1 / txt_path.stem), "_번역.txt"]) for txt_path in a24]
 
     def readfile(txt_path):
         with open(txt_path, "r", encoding="utf-8") as f:
             return f.readlines()
 
-    def writefile(txt_path, txts):
-        with open("".join([str(save_path1 / txt_path.stem), "_번역.txt"]), "w", encoding="utf-8") as f:
+    def writefile(save_path, txts):
+        with open(save_path, "w", encoding="utf-8") as f:
             f.writelines(txts)
 
-    text_list = []
-
-    with concurrent.futures.ThreadPoolExecutor() as thread:
-        for large_texts in thread.map(readfile, a24):  # 멀티쓰레드를 사용하여 파일 입출력을 빠르게 함.
-            text_list.append(large_texts)
-
-    print("파일 읽기 완료")
-    print(type(text_list))
-    # aaa = list(text_list[0])
-    futures_list = []
-    bar = tqdm(total=len(text_list[0]))
-    # (ProcessPoolExecutor)을 못 쓴다. eztarans J2KEngine.dll이 락이 걸려서 그런 것 같다. - 그건 틀렸다. 오류 해결. dll문제 아님. wait를 잘못 쓰고 있었다.
+    # (ProcessPoolExecutor)을 못 쓴다. eztarans J2KEngine.dll이 락이 걸려서 그런 것 같다.
     """
     https://github.com/tqdm/tqdm/blob/master/examples/parallel_bars.py - 참고
     tqdm.set_lock(RLock())
     p = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
     p.map(partial(progresser, progress=True), L)
-    
-    tqdm.set_lock(RLock())
-    with multiprocessing.Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),)) as pool:
-        # bar = tqdm(total=len(text_list[0]))
-        trans_texts = pool.map(clip_trans, text_list[0])
+    """
+    with multiprocessing.Pool() as pool, concurrent.futures.ThreadPoolExecutor() as thread:
+        for texts, file_path in zip(thread.map(readfile, a24), save_paths):  # thread.map으로 파일을 읽어오고 save_paths순으로 텍스트덩어리가 나열됨.
+            thread.submit(writefile, file_path, pool.map(clip_trans, texts))
+            # thread에게 일거리를 줌. writefile로 파일 경로와 번역한 텍스트들을 줄테니까 저장하라고. 이때, pool.map으로 텍스트들을 멀티프로세스 방식으로 번역함.
+            # 파일 읽고 쓰기가 비동기로 움직이고 작업속도가 더 빨라질 것이라 예상됨. 아님 말고.
 
-        print("번역 완료")
-
-        with open("".join([str(save_path1 / a24[0].stem), "_번역.txt"]), "w", encoding="utf-8") as f:
-            # [s.result() for s in text_list2]
-            f.writelines(trans_texts)
-    """
-    """
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as thread:
-        trans_texts = thread.map(clip_trans, text_list[0])
-    """
-    with multiprocessing.Pool() as pool:
-        with concurrent.futures.ThreadPoolExecutor() as thread:
-            # bar = tqdm(total=len(text_list[0]))
-            trans_texts = []
-            for texts, file_path in zip(text_list, a24):
-                # trans_texts.append(pool.map(clip_trans, texts))
-                # trans_text = pool.map(clip_trans, texts)
-                thread.submit(writefile, file_path, pool.map(clip_trans, texts))
-
-    print("번역 완료")
-    # ThreadPoolExecutor(max_workers=1)로 번역했을 경우 - 54013ms - 54초
-    # ThreadPoolExecutor(max_workers=4)로 번역했을 경우 - 13485ms - 13.5초
-    # ThreadPoolExecutor(max_workers=6)로 번역했을 경우 - 10286ms - 10초 - 최적값
-    # ThreadPoolExecutor(max_workers=8)로 번역했을 경우 - 12022ms - 12초
-    # ThreadPoolExecutor(max_workers=12)로 번역했을 경우 - 19969ms - 20초
-    # ThreadPoolExecutor(max_workers=16)로 번역했을 경우 - 26469ms  - 26초
-    # multiprocessing.Pool()로 번역했을 경우 - 6517ms - 6.5초 - 최적값
-    # multiprocessing.Pool(4)로 번역했을 경우 - 11151ms - 11초
-
-    """
-    for re in trans_texts:
-        print(re)
-    """
+    # print("번역 완료")
     end_time = time.perf_counter()
-    print(f"번역에 든 시간 : {int(round((end_time - start_time) * 1000))}ms")
-
-
-# 파이썬 32비트 버전에서만 됩니다. - 이 때문에 64비트 파이썬에서 쓰려면 exe를 만들어 외부로 빼야할 듯.
-# 출처
-# https://github.com/HelloKS/ezTransWeb
+    print(f"번역한 시간 : {int(round((end_time - start_time) * 1000))}ms")
 
 
 if __name__ == "__main__":
@@ -141,7 +93,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         # 인자가 없으면 실행됨.
         print("call_eztrans file_mode (원문 폴더 경로) <-이런 식으로 입력")
-        main("새 폴더")  # 05/01 속도 테스트 용 - 303kb로 실험. - 15557ms - 15.55초// 05/03 - 15242ms - 15.24초
+        main("새 폴더")  # 05/01 속도 테스트 용 - 303kb로 실험. - 15557ms - 15.55초// 05/03 - 15242ms - 15.24초 2차 테스트 - 15052msms - 15.05초 3차 테스트 - 14773ms - 14.77초
         input()  # 코드 정지용
         sys.exit()
 
@@ -160,12 +112,27 @@ if __name__ == "__main__":
             print("인자가 잘못되었습니다.")
             input()  # 코드 정지용
             sys.exit()
+    """
+    # 파이썬 32비트 버전에서만 됩니다. - 이 때문에 64비트 파이썬에서 쓰려면 exe를 만들어 외부로 빼야할 듯.
+    # 출처
+    # https://github.com/HelloKS/ezTransWeb
 
     # 테스트해보니, 몇백개의 텍스트 파일을 작업하는 데 시간이 더럽게 오래걸림.
-    # 병렬처리로 만들어야겠음. - 긴가민가했지만, 멀티쓰레드가 안 됨. 멀티프로세스로 시도.
+    # 병렬처리로 만들어야겠음. - 긴가민가했지만, 멀티쓰레드가 안 됨(ThreadPoolExecutor로 됨.). 멀티프로세스로 시도.
     # enhd 적용 확인. - 그러나 때때로 적용이 안되는 경우가 있음. 원인을 모르겠다.
     # 버그 1 - 문자열 맨 앞에 전각 공백'　', 그냥 공백' '이 있는 경우 알아서 생략이 되서 출력. - 문자열 중간에 공백이 있어도 마찬가지.
-    # 버그 2 - 때때로 ehnd가 이상하게 적용되는 경우가 있음. - |:_  넣어서 해결.
+    # 버그 2 - 때때로 ehnd가 이상하게 적용되는 경우가 있음. - |:_  넣어서 해결. - 아직 완벽하진 않음.
     # 리스트 컴프리헨션을 쓴 경우 - 번역에 든 시간 : 0:00:51.382579
     # 그냥 for문 쓴 경우 - 번역에 든 시간 : 0:00:51.369040
     # 다 때려치고 for문만 주구장창 쓰는 거로.
+
+    번역 부분 속도 테스트 - 멀티쓰레드로도 속도 개선이 있음.
+    # ThreadPoolExecutor(max_workers=1)로 번역했을 경우 - 54013ms - 54초
+    # ThreadPoolExecutor(max_workers=4)로 번역했을 경우 - 13485ms - 13.5초
+    # ThreadPoolExecutor(max_workers=6)로 번역했을 경우 - 10286ms - 10초 - 멀티쓰레드에서 최적값
+    # ThreadPoolExecutor(max_workers=8)로 번역했을 경우 - 12022ms - 12초
+    # ThreadPoolExecutor(max_workers=12)로 번역했을 경우 - 19969ms - 20초
+    # ThreadPoolExecutor(max_workers=16)로 번역했을 경우 - 26469ms  - 26초
+    # multiprocessing.Pool()로 번역했을 경우 - 6517ms - 6.5초 - 최적값(번역할 파일이 많을수록 더 빠름.)
+    # multiprocessing.Pool(4)로 번역했을 경우 - 11151ms - 11초
+    """
