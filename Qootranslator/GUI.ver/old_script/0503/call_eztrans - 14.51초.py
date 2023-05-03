@@ -1,8 +1,8 @@
 from ctypes import WinDLL, c_char_p, c_int, c_wchar_p
 from ctypes.wintypes import BOOL
 
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import pathlib
+from concurrent.futures import ThreadPoolExecutor
 import time
 import sys
 from multiprocessing import Pool, freeze_support
@@ -32,50 +32,56 @@ except Exception as e:
 
 eng = TransEngine()
 eng.initialize(engine_object)
+trans_fuc = eng.trans
 
 
 def clip_trans(text):  # 클립보드 번역용
     try:
-        a = eng.trans(0, "".join(["|:_", text])).lstrip("|:_")
+        a = trans_fuc(0, "".join(["|:_", text])).lstrip("|:_")
         return a
     except Exception as e:
         return str(e)
 
 
 def main(a22):  # 텍스트 파일들 번역용, 텍스트 파일 목록만 전달 받도록 함.
-    path = Path(a22)
+    path = pathlib.Path(a22)
     a23 = (path.parent.joinpath("번역한_텍스트"), path.joinpath("번역한_텍스트"))
     if path.is_file():  # 파일을 넣었을 시
-        save_path1 = a23[0]
-        a24 = {path: "".join([str(save_path1 / path.stem), "_번역.txt"])}
+        a24, save_path1 = [path], a23[0]
         save_path1.mkdir(exist_ok=True)
     else:  # 폴더를 넣었을 시
-        save_path1 = a23[1]
-        a24 = {txt_path: "".join([str(save_path1 / txt_path.stem), "_번역.txt"]) for txt_path in path.glob("**/*.txt")}
+        a24, save_path1 = list(path.glob("**/*.txt")), a23[1]
         try:
             save_path1.mkdir()
         except FileExistsError:
             print("번역한 텍스트가 이미 있는 것 같습니다. 덮어씁니다")
-            a24 = {s: a24[s] for s in a24.keys() if "\\번역한_텍스트\\" not in str(s)}
+            a24 = [s for s in a24 if "\\번역한_텍스트\\" not in str(s)]
+
+    start_time = time.perf_counter()  # 시간 재기.
+    # 저장할 파일 경로 생성
+    save_paths = ["".join([str(save_path1 / txt_path.stem), "_번역.txt"]) for txt_path in a24]
 
     def readfile(txt_path):
         with open(txt_path, "r", encoding="utf-8") as f:
-            return (f.readlines(), txt_path)
+            return f.readlines()
 
     def writefile(save_path, txts):
         with open(save_path, "w", encoding="utf-8") as f:
             f.writelines(txts.get())
-            print(f"{save_path} 완료", flush=True)
 
     # (ProcessPoolExecutor)을 못 쓴다. eztarans J2KEngine.dll이 락이 걸려서 그런 것 같다.
-    start_time = time.perf_counter()  # 시간 재기.
+    """
+    https://github.com/tqdm/tqdm/blob/master/examples/parallel_bars.py - 참고
+    tqdm.set_lock(RLock())
+    p = Pool(initializer=tqdm.set_lock, initargs=(tqdm.get_lock(),))
+    p.map(partial(progresser, progress=True), L)
+    """
+
     with Pool() as pool, ThreadPoolExecutor() as thread:
-        futures = [thread.submit(readfile, a) for a in a24.keys()]
-        for b in as_completed(futures):
-            thread.submit(writefile, a24[b.result()[1]], pool.map_async(clip_trans, b.result()[0]))
-        # thread.map으로 파일을 읽어오고 save_paths순으로 텍스트덩어리가 나열됨.
-        # thread에게 일거리를 줌. writefile로 파일 경로와 번역한 텍스트들을 줄테니까 저장하라고. 이때, pool.map으로 텍스트들을 멀티프로세스 방식으로 번역함.
-        # 파일 읽고 쓰기, 멀티프로세스 작업 할당이 비동기로 움직여 작업속도가 더 빨라질 것이라 예상됨. 아님 말고.
+        for texts, file_path in zip(thread.map(readfile, a24), save_paths):  # thread.map으로 파일을 읽어오고 save_paths순으로 텍스트덩어리가 나열됨.
+            thread.submit(writefile, file_path, pool.map_async(clip_trans, texts))
+            # thread에게 일거리를 줌. writefile로 파일 경로와 번역한 텍스트들을 줄테니까 저장하라고. 이때, pool.map으로 텍스트들을 멀티프로세스 방식으로 번역함.
+            # 파일 읽고 쓰기, 멀티프로세스 작업 할당이 비동기로 움직여 작업속도가 더 빨라질 것이라 예상됨. 아님 말고.
 
     # print("번역 완료")
     end_time = time.perf_counter()
@@ -90,6 +96,14 @@ if __name__ == "__main__":
         # 인자가 없으면 실행됨.
         print("call_eztrans file_mode (원문 폴더 경로) <-이런 식으로 입력")
         main("새 폴더")
+        # 05/01 속도 테스트 용 - 303kb로 실험. - 15557ms - 15.55초
+        # // 05/03 - 15242ms - 15.24초 2차 테스트 - 15052msms - 15.05초
+        # 3차 테스트 - 14773ms - 14.77초 4차 테스트 - 14487ms - 14.48초(imap씀)
+        # 5차 테스트 - 14287ms - 14.28초(비동기 방식 map_async) 6차 테스트 - 14395ms - 14.39초(chunksize=1) 14797ms - 14.79초(chunksize=24)
+        # 14351ms - 14.35초(clip_trans 함수 원래대로 함.)
+        # 15557ms에서 14287ms로 줄었으니 8.2% 정도 빨라짐.
+        # 대량으로 번역했을 때 테스트 필요. - 7.47mb로 실험. 0503 11:30 코드(map사용) - 253220ms - 253.22초// 13:18 코드(map_async사용) - 228720ms - 228.72초//13:27 코드(imap사용) - 231317ms - 231.32초
+        # 253220ms에서 228720ms로 줄었으니 9.7% 정도 빨라짐.
         input()  # 코드 정지용
         sys.exit()
 
@@ -131,15 +145,6 @@ if __name__ == "__main__":
     # ThreadPoolExecutor(max_workers=16)로 번역했을 경우 - 26469ms  - 26초
     # multiprocessing.Pool()로 번역했을 경우 - 6517ms - 6.5초 - 최적값(번역할 파일이 많을수록 더 빠름.)
     # multiprocessing.Pool(4)로 번역했을 경우 - 11151ms - 11초
-
-    # 05/01 속도 테스트 용 - 303kb로 실험. - 15557ms - 15.55초
-        # // 05/03 - 15242ms - 15.24초 2차 테스트 - 15052msms - 15.05초
-        # 3차 테스트 - 14773ms - 14.77초 4차 테스트 - 14487ms - 14.48초(imap씀)
-        # 5차 테스트 - 14287ms - 14.28초(비동기 방식 map_async) 6차 테스트 - 14395ms - 14.39초(chunksize=1) 14797ms - 14.79초(chunksize=24)
-        # 14351ms - 14.35초(clip_trans 함수 원래대로 함.) 75480ms - 75.48초(chunksize=100000), //14.64초-as_completed사용//14.53초//14.48초(리스트컴프리 극한까지 씀.)//14.69초
-        # 15557ms에서 14287ms로 줄었으니 8.2% 정도 빨라짐.
-        # 대량으로 번역했을 때 테스트 필요. - 7.47mb로 실험. 기존 코드: 249633ms-24.96초   // 0503 11:30 코드(map사용) - 253220ms - 253.22초// 13:18 코드(map_async사용) - 228720ms - 228.72초//13:27 코드(imap사용) - 231317ms - 231.32초
-        # 249633ms에서 228720ms로 줄었으니 8.4% 정도 빨라짐.
     
     # 이번에 개선한 점
             # 1.번역할 파일 읽기 속도, 번역된 파일 저장 속도 개선.
@@ -148,5 +153,5 @@ if __name__ == "__main__":
             # 개선 방법. 여러 텍스트 파일을 한꺼번에 빠르게 읽고 그걸 프로세스풀에 던짐. 그리고 프로세스들은 그걸 하나씩 꺼내서 작업함. 그리고 다시 저장.
             # map_async 비동기 프로그래밍은 어떨까. 더 빠를까? - 더 빠름.
             # 또, chunksize를 크게 하면 더 빠를까? - 1로 해본 결과 더 느림(14395ms).
-            # 그리고 프로세스 풀 안에 멀티쓰레드를 하면 어떨까? - 안됨.
+            # 그리고 프로세스 풀 안에 멀티쓰레드를 하면 어떨까?
     """

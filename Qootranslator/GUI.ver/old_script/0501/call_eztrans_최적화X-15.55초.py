@@ -96,7 +96,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 1:
         # 인자가 없으면 실행됨.
         print("call_eztrans file_mode (원문 폴더 경로) <-이런 식으로 입력")
-        eng.main(r"번역할 경로")  # 번역에 든 시간 : 15557ms - 15.5초
+        eng.main(r"C:\Users\nsoop\Desktop\workingfolder_current\JPtoKR_Tools\Qootranslator\GUI.ver\새 폴더")  # 번역에 든 시간 : 15557ms - 15.5초
         input()  # 코드 정지용
         sys.exit()
 
